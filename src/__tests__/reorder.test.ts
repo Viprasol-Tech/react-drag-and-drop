@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { reorder, getDropIndex, normalizeInsertIndex } from "../reorder";
+import {
+  reorder,
+  getDropIndex,
+  normalizeInsertIndex,
+  moveBetween,
+} from "../reorder";
 
 describe("reorder", () => {
   it("moves an item forward", () => {
@@ -74,5 +79,61 @@ describe("normalizeInsertIndex", () => {
 
   it("leaves the insert index when equal", () => {
     expect(normalizeInsertIndex(2, 2)).toBe(2);
+  });
+});
+
+describe("moveBetween", () => {
+  it("moves an item from source into destination", () => {
+    const out = moveBetween(["a", "b"], ["x"], 0, 1);
+    expect(out.source).toEqual(["b"]);
+    expect(out.destination).toEqual(["x", "a"]);
+  });
+
+  it("inserts at the requested destination index", () => {
+    const out = moveBetween(["a", "b", "c"], ["x", "y"], 1, 0);
+    expect(out.source).toEqual(["a", "c"]);
+    expect(out.destination).toEqual(["b", "x", "y"]);
+  });
+
+  it("inserts at the end when toIndex equals destination length", () => {
+    const out = moveBetween(["a"], ["x", "y"], 0, 2);
+    expect(out.destination).toEqual(["x", "y", "a"]);
+  });
+
+  it("does not mutate either input array", () => {
+    const src = ["a", "b"];
+    const dest = ["x"];
+    moveBetween(src, dest, 0, 1);
+    expect(src).toEqual(["a", "b"]);
+    expect(dest).toEqual(["x"]);
+  });
+
+  it("clamps an out-of-range source index", () => {
+    const out = moveBetween(["a", "b", "c"], [], 99, 0);
+    expect(out.source).toEqual(["a", "b"]);
+    expect(out.destination).toEqual(["c"]);
+  });
+
+  it("clamps an out-of-range destination index", () => {
+    const out = moveBetween(["a"], ["x"], 0, 99);
+    expect(out.destination).toEqual(["x", "a"]);
+  });
+
+  it("returns inputs unchanged when the source is empty", () => {
+    const out = moveBetween<string>([], ["x"], 0, 0);
+    expect(out.source).toEqual([]);
+    expect(out.destination).toEqual(["x"]);
+  });
+
+  it("moves into an empty destination", () => {
+    const out = moveBetween(["a", "b"], [], 1, 0);
+    expect(out.source).toEqual(["a"]);
+    expect(out.destination).toEqual(["b"]);
+  });
+
+  it("preserves object identity when moving", () => {
+    const a = { id: 1 };
+    const out = moveBetween([a], [], 0, 0);
+    expect(out.destination[0]).toBe(a);
   });
 });

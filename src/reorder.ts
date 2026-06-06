@@ -67,3 +67,41 @@ export function getDropIndex(
 export function normalizeInsertIndex(from: number, insertIndex: number): number {
   return insertIndex > from ? insertIndex - 1 : insertIndex;
 }
+
+/** The result of moving an item from one list to another. */
+export interface MoveBetweenResult<T> {
+  /** The source list with the item removed. */
+  source: T[];
+  /** The destination list with the item inserted. */
+  destination: T[];
+}
+
+/**
+ * Move the item at `fromIndex` in `source` into `destination` at `toIndex`,
+ * returning brand-new arrays for both. Neither input is mutated.
+ *
+ * Indices are clamped so out-of-bounds requests degrade gracefully. If
+ * `fromIndex` is out of range of a non-empty source, the nearest valid item is
+ * moved; an empty source yields the inputs unchanged.
+ *
+ * @example
+ * moveBetween(["a", "b"], ["x"], 0, 1)
+ * // => { source: ["b"], destination: ["x", "a"] }
+ */
+export function moveBetween<T>(
+  source: readonly T[],
+  destination: readonly T[],
+  fromIndex: number,
+  toIndex: number,
+): MoveBetweenResult<T> {
+  const src = source.slice();
+  const dest = destination.slice();
+  if (src.length === 0) return { source: src, destination: dest };
+
+  const clampedFrom = Math.min(Math.max(Math.trunc(fromIndex), 0), src.length - 1);
+  const clampedTo = Math.min(Math.max(Math.trunc(toIndex), 0), dest.length);
+
+  const [moved] = src.splice(clampedFrom, 1);
+  dest.splice(clampedTo, 0, moved);
+  return { source: src, destination: dest };
+}
